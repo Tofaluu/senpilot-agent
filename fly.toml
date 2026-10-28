@@ -2,6 +2,10 @@ app = "uarb-agent-tofalu"
 # Toronto: closest Fly region to the UARB servers in Nova Scotia.
 primary_region = "yyz"
 
+# On deploy the agent gets SIGINT and finishes in-flight requests; a 10-document request needs ~30s.
+kill_signal = "SIGINT"
+kill_timeout = 60
+
 [build]
   dockerfile = "Dockerfile"
 

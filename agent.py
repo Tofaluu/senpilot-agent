@@ -36,7 +36,10 @@ class DocRequest(BaseModel):
 
 class Understanding(BaseModel):
     is_request: bool = Field(description="False for spam, auto-replies, or mail unrelated to fetching UARB documents")
-    sender_first_name: str = Field(description="Sender's first name if evident from the signature or address, else empty")
+    sender_first_name: str = Field(
+        description="The sender's first name, only if they signed the new (unquoted) part of this email, e.g. "
+                    "'Thanks, Paula'. Never take it from email addresses, display names, or quoted 'On ... wrote:' "
+                    "lines. Empty if unsigned.")
     requests: list[DocRequest] = Field(description="Every (matter, document type) pair the sender is asking for")
     replaces_previous: bool = Field(
         description="True if this email corrects or cancels an earlier request in the same thread (e.g. 'sorry, I "
@@ -88,6 +91,8 @@ def understand(subject: str, body: str) -> Understanding:
 # stale. Comparing email timestamps (not processing order) stays correct when a correction is handled first.
 replaced_at: dict[str, datetime] = {}
 replaced_lock = threading.Lock()
+# thread_id -> name the sender signed with, so an unsigned follow-up keeps the same greeting.
+thread_names: dict[str, str] = {}
 
 
 def fulfil(msg_id: str, req: DocRequest, name: str, stale: Callable[[], bool]) -> None:
@@ -122,10 +127,12 @@ def handle(msg_id: str) -> None:
     u = understand(msg.subject or "", body)
     log.info("understood: is_request=%s requests=%s replaces_previous=%s clarification=%r", u.is_request,
              [(r.matter, r.doc_type) for r in u.requests], u.replaces_previous, u.clarification)
-    name = u.sender_first_name
+    thread, sent_at = msg.thread_id, msg.timestamp
+    if u.sender_first_name and thread:
+        thread_names[thread] = u.sender_first_name
+    name = u.sender_first_name or thread_names.get(thread, "")
 
     # Handled before the is_request check: a bare "never mind" may not read as a document request.
-    thread, sent_at = msg.thread_id, msg.timestamp
     if u.replaces_previous and thread:
         with replaced_lock:
             replaced_at[thread] = max(replaced_at.get(thread, sent_at), sent_at)
@@ -207,13 +214,19 @@ def poll_once(pool: ThreadPoolExecutor) -> None:
 
 def main() -> None:
     log.info("agent listening on %s (polling every %ds, %d workers)", mail.INBOX, POLL_SECONDS, WORKERS)
-    with ThreadPoolExecutor(max_workers=WORKERS) as pool:
+    pool = ThreadPoolExecutor(max_workers=WORKERS)
+    try:
         while True:
             try:
                 poll_once(pool)
             except Exception:
                 log.exception("poll failed")
             time.sleep(POLL_SECONDS)
+    except KeyboardInterrupt:
+        # Fly sends SIGINT on deploy; finish in-flight requests (already acknowledged) instead of dropping them.
+        log.info("shutting down: finishing in-flight requests")
+        pool.shutdown(wait=True, cancel_futures=False)
+        log.info("shutdown complete")
 
 
 if __name__ == "__main__":
