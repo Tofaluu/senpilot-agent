@@ -111,13 +111,16 @@ def compose(result: MatterResult, parts: list[ZipPart], skipped: list[Path], gre
     lines.append("")
 
     attached = n - len(skipped)
-    got = f"all {_count(n, r.doc_type)}" if n == total else f"{n} out of the {_count(total, r.doc_type)}"
+    if n == total:
+        got = f"the only {SINGULAR[r.doc_type]}" if n == 1 else f"all {_count(n, r.doc_type)}"
+    else:
+        got = f"{n} out of the {_count(total, r.doc_type)}"
     if total == 0:
         lines.append(f"Since there are no {r.doc_type} in this matter, there's nothing attached.")
     elif n == 0:
         lines.append(f"Unfortunately I wasn't able to download any of the {r.doc_type}. Please try again in a few minutes.")
     elif not skipped:
-        lines.append(f"I downloaded {got} and am attaching them {attaching}.")
+        lines.append(f"I downloaded {got} and am attaching {'it' if n == 1 else 'them'} {attaching}.")
     else:
         one = len(skipped) == 1
         too_big = "too large to email (each email is limited to about 4 MB)"

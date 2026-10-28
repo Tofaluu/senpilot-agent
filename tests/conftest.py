@@ -13,6 +13,6 @@ import agent  # noqa: E402
 
 @pytest.fixture(autouse=True)
 def reset_agent_state():
-    for d in (agent.thread_names, agent.replaced_at, agent.last_help):
+    for d in (agent.thread_names, agent.replaced_at, agent.last_help, agent.fetching_threads):
         d.clear()
     yield

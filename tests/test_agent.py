@@ -134,6 +134,13 @@ def test_correction_processed_first_still_wins(inbox):
     assert [r.doc_type for _, r, _, _ in inbox.fulfilled] == ["Key Documents"]
 
 
+def test_answer_to_clarification_is_not_called_a_switch(inbox):
+    inbox.email("m1", "send exhibit for 122056", understanding(clarification="Did you mean M12205?"))
+    inbox.email("m2", "12205", understanding(requests=[DocRequest(matter="M12205", doc_type="Exhibits")],
+                                             replaces_previous=True))
+    assert inbox.replies[1][1].startswith("Got it! Fetching the Exhibits for M12205")
+
+
 def test_cancel_with_no_new_request(inbox):
     inbox.email("m1", "never mind", understanding(replaces_previous=True))
     assert inbox.replies[0][1].startswith("No problem, I've cancelled that request.")

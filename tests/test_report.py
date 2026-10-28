@@ -64,6 +64,12 @@ def test_summary_all_downloaded(tmp_path):
     assert "I downloaded all 6 Key Documents and am attaching them as a ZIP here." in compose(r, parts, skipped)[1]
 
 
+def test_summary_single_document(tmp_path):
+    r = _result("Key Documents", counts={"Key Documents": 1}, files=_files(tmp_path, [1000]))
+    parts, skipped = make_zips(r, tmp_path / "out")
+    assert "I downloaded the only Key Document and am attaching it as a ZIP here." in compose(r, parts, skipped)[1]
+
+
 def test_summary_empty_tab(tmp_path):
     r = _result("Transcripts")
     parts, skipped = make_zips(r, tmp_path / "out")

@@ -105,6 +105,9 @@ replaced_at: dict[str, datetime] = {}
 replaced_lock = threading.Lock()
 # thread_id -> name the sender signed with, so an unsigned follow-up keeps the same greeting.
 thread_names: dict[str, str] = {}
+# Threads with a fetch already acknowledged. The model also flags answers to a clarifying question as replacing
+# the previous request, but there's nothing to "switch" from until a fetch has started.
+fetching_threads: set[str] = set()
 
 # Backstop against loops with bots that slip past the header checks: a loop is a rapid back-and-forth,
 # so a short per-sender cooldown is enough without silencing a person who asks again later.
@@ -204,7 +207,9 @@ def handle(msg_id: str) -> None:
 
     # Acknowledge immediately: scraping takes ~30s, and this reply also marks the email as handled.
     what = " and ".join(f"the {r.doc_type} for {r.matter}" for r in valid)
-    lead = "No problem, switching to" if u.replaces_previous else "Got it! Fetching"
+    lead = "No problem, switching to" if u.replaces_previous and thread in fetching_threads else "Got it! Fetching"
+    if thread:
+        fetching_threads.add(thread)
     mail.reply(msg_id, compose_ack(
         f"{lead} {what} now (usually under a minute). "
         + ("You'll get one reply per request in this thread." if len(valid) > 1 else "The ZIP will follow in this thread.")))
