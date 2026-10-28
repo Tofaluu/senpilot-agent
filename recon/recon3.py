@@ -1,5 +1,8 @@
 import sys
+from pathlib import Path
 from playwright.sync_api import sync_playwright
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import scraper
 
 matter, doc_type = sys.argv[1], sys.argv[2]
