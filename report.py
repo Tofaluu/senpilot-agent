@@ -80,9 +80,11 @@ def _counts_sentence(counts: dict[str, int]) -> str:
     absent = [t for t in DOC_TYPES if not counts.get(t)]
     if not present:
         return "I didn't find any documents in this matter."
+    total = sum(counts.get(t, 0) for t in DOC_TYPES)
+    lead = f"I found {total} document{'' if total == 1 else 's'} in total"
     if absent:
-        return f"I found {_join(present + [f'no {_join(absent, 'or')}'])}."
-    return f"I found {_join(present)}."
+        return f"{lead}: {_join(present + [f'no {_join(absent, 'or')}'])}."
+    return f"{lead}: {_join(present)}."
 
 
 def compose(result: MatterResult, parts: list[ZipPart], skipped: list[Path], greeting_name: str = "") -> tuple[str, str]:

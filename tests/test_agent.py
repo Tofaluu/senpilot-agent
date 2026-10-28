@@ -11,16 +11,16 @@ T0 = datetime(2026, 10, 28, 6, 0, tzinfo=timezone.utc)
 
 
 @pytest.mark.parametrize("addr, headers, expected", [
-    ("paula@senpilot.com", {"X-Received": "x"}, False),
-    ("paula@senpilot.com", {"Auto-Submitted": "auto-replied"}, True),
-    ("paula@senpilot.com", {"auto-submitted": "Auto-Generated"}, True),   # header names are case-insensitive
+    ("alex@example.com", {"X-Received": "x"}, False),
+    ("alex@example.com", {"Auto-Submitted": "auto-replied"}, True),
+    ("alex@example.com", {"auto-submitted": "Auto-Generated"}, True),   # header names are case-insensitive
     ("bob@x.com", {"Auto-Submitted": "no"}, False),                       # RFC 3834: "no" means a human sent it
     ("news@bigco.com", {"List-Unsubscribe": "<mailto:u@x>"}, True),
     ("alerts@bigco.com", {"Precedence": "bulk"}, True),
     ("noreply@github.com", {}, True),
     ("no-reply@service.com", {}, True),
     ("MAILER-DAEMON@google.com", {}, True),
-    ("noreen@senpilot.com", {}, False),                                   # a real name, not "noreply"
+    ("noreen@example.com", {}, False),                                   # a real name, not "noreply"
 ])
 def test_is_automated(addr, headers, expected):
     assert is_automated(addr, headers) is expected
@@ -59,7 +59,7 @@ def inbox(monkeypatch):
     monkeypatch.setattr(agent, "understand", fake_understand)
     monkeypatch.setattr(agent, "fulfil", lambda msg_id, req, name, stale: state.fulfilled.append((msg_id, req, name, stale)))
 
-    def email(msg_id, body, verdict, sender="Paula Prado <paula@senpilot.com>", headers=None, thread="t1", at=T0):
+    def email(msg_id, body, verdict, sender="Alex Rivera <alex@example.com>", headers=None, thread="t1", at=T0):
         state.messages[msg_id] = SimpleNamespace(
             from_=sender, subject="Request", headers=headers or {}, text=body, extracted_text=None, preview=None,
             thread_id=thread, timestamp=at)
@@ -140,7 +140,7 @@ def test_cancel_with_no_new_request(inbox):
 
 
 def test_signed_name_is_remembered_per_thread(inbox):
-    inbox.email("m1", "exhibits please\nThanks, Paula", understanding(sender_first_name="Paula", clarification="Which matter?"))
+    inbox.email("m1", "exhibits please\nThanks, Alex", understanding(sender_first_name="Alex", clarification="Which matter?"))
     inbox.email("m2", "M12205", understanding(clarification="Which document type?"))
     inbox.email("m3", "hello", understanding(clarification="Which matter?"), thread="other-thread")
-    assert [text.splitlines()[0] for _, text in inbox.replies] == ["Hi Paula,", "Hi Paula,", "Hi there,"]
+    assert [text.splitlines()[0] for _, text in inbox.replies] == ["Hi Alex,", "Hi Alex,", "Hi there,"]

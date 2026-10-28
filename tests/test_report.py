@@ -30,9 +30,11 @@ def _result(doc_type="Other Documents", counts=None, files=()):
 
 @pytest.mark.parametrize("counts, expected", [
     ({"Exhibits": 13, "Key Documents": 6, "Other Documents": 43},
-     "I found 13 Exhibits, 6 Key Documents, 43 Other Documents, and no Transcripts or Recordings."),
-    ({"Exhibits": 1}, "I found 1 Exhibit and no Key Documents, Other Documents, Transcripts, or Recordings."),
-    ({t: 2 for t in DOC_TYPES}, "I found 2 Exhibits, 2 Key Documents, 2 Other Documents, 2 Transcripts, and 2 Recordings."),
+     "I found 62 documents in total: 13 Exhibits, 6 Key Documents, 43 Other Documents, and no Transcripts or Recordings."),
+    ({"Exhibits": 1},
+     "I found 1 document in total: 1 Exhibit and no Key Documents, Other Documents, Transcripts, or Recordings."),
+    ({t: 2 for t in DOC_TYPES},
+     "I found 10 documents in total: 2 Exhibits, 2 Key Documents, 2 Other Documents, 2 Transcripts, and 2 Recordings."),
     ({}, "I didn't find any documents in this matter."),
 ])
 def test_counts_sentence_matches_brief_style(counts, expected):
@@ -48,9 +50,9 @@ def test_summary_partial_download(tmp_path):
     files = _files(tmp_path, [1000] * 10)
     r = _result(files=files)
     parts, skipped = make_zips(r, tmp_path / "out")
-    subject, body = compose(r, parts, skipped, "Paula")
+    subject, body = compose(r, parts, skipped, "Alex")
     assert subject == "M12205 – Other Documents (10 of 43)"
-    assert body.startswith("Hi Paula,")
+    assert body.startswith("Hi Alex,")
     assert "It relates to Capital Expenditure Approvals within the Water category." in body
     assert "initial filing on April 7, 2025 and a final filing on October 23, 2025" in body
     assert "I downloaded 10 out of the 43 Other Documents and am attaching them as a ZIP here." in body

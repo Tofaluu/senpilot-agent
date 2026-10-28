@@ -45,7 +45,7 @@ class Understanding(BaseModel):
                     "spam, marketing, and automated mail.")
     sender_first_name: str = Field(
         description="The sender's first name, only if they signed the new (unquoted) part of this email, e.g. "
-                    "'Thanks, Paula'. Never take it from email addresses, display names, or quoted 'On ... wrote:' "
+                    "'Thanks, Alex'. Never take it from email addresses, display names, or quoted 'On ... wrote:' "
                     "lines. Empty if unsigned.")
     requests: list[DocRequest] = Field(description="Every (matter, document type) pair the sender is asking for")
     replaces_previous: bool = Field(
