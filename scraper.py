@@ -6,6 +6,7 @@ import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Callable
 
 from playwright.sync_api import Page, sync_playwright
 
@@ -18,6 +19,10 @@ MATTER_RE = re.compile(r"^M\d{5}$")
 
 class MatterNotFound(Exception):
     pass
+
+
+class Cancelled(Exception):
+    """The request was superseded (e.g. the user sent a correction) before it finished."""
 
 
 @dataclass
@@ -188,7 +193,8 @@ def _download(page: Page, doc: Document, btn: dict, out_dir: Path) -> None:
     page.locator(".fm-download-button").first.wait_for(state="detached", timeout=15000)
 
 
-def fetch_matter(matter: str, doc_type: str, out_dir: Path, limit: int = 10, headless: bool = True) -> MatterResult:
+def fetch_matter(matter: str, doc_type: str, out_dir: Path, limit: int = 10, headless: bool = True,
+                 cancelled: Callable[[], bool] = lambda: False) -> MatterResult:
     matter = matter.strip().upper()
     if not MATTER_RE.match(matter):
         raise ValueError(f"Invalid matter number: {matter}")
@@ -212,6 +218,8 @@ def fetch_matter(matter: str, doc_type: str, out_dir: Path, limit: int = 10, hea
                 ctx.route("**/*", lambda route: route.abort() if route.request.resource_type in BLOCKED
                           else route.continue_())
                 page = ctx.new_page()
+                if cancelled():
+                    raise Cancelled(matter)
                 try:
                     _search(page, matter)
                     mark("search done")
@@ -230,6 +238,8 @@ def fetch_matter(matter: str, doc_type: str, out_dir: Path, limit: int = 10, hea
                 rows = _list_documents(page, doc_type, limit)
                 mark(f"listed {len(rows)} docs")
                 for doc, btn in rows:
+                    if cancelled():
+                        raise Cancelled(matter)
                     try:
                         _download(page, doc, btn, out_dir)
                     except Exception as e:

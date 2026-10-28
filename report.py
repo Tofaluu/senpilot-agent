@@ -108,18 +108,25 @@ def compose(result: MatterResult, parts: list[ZipPart], skipped: list[Path], gre
     lines.append(about + " " + _counts_sentence(r.counts))
     lines.append("")
 
+    attached = n - len(skipped)
+    got = f"all {_count(n, r.doc_type)}" if n == total else f"{n} out of the {_count(total, r.doc_type)}"
     if total == 0:
         lines.append(f"Since there are no {r.doc_type} in this matter, there's nothing attached.")
     elif n == 0:
         lines.append(f"Unfortunately I wasn't able to download any of the {r.doc_type}. Please try again in a few minutes.")
-    elif n == total:
-        lines.append(f"I downloaded all {_count(n, r.doc_type)} and am attaching them {attaching}.")
+    elif not skipped:
+        lines.append(f"I downloaded {got} and am attaching them {attaching}.")
     else:
-        lines.append(f"I downloaded {n} out of the {_count(total, r.doc_type)} and am attaching them {attaching}.")
-
-    if skipped:
-        lines.append(f"({len(skipped)} file(s) are too large to email on their own, so they aren't attached: "
-                     f"{', '.join(f.name for f in skipped)}.)")
+        one = len(skipped) == 1
+        too_big = "too large to email (each email is limited to about 4 MB)"
+        if attached:
+            lines.append(f"I downloaded {got}. {attached} of them {'is' if attached == 1 else 'are'} attached {attaching}; "
+                         f"{len(skipped)} {'is' if one else 'are'} {too_big}:")
+        else:
+            lines.append(f"I downloaded {got}, but {'it is' if one else 'they are'} {too_big}:")
+        lines += [f"  • {f.name} ({f.stat().st_size / 2**20:.1f} MB)" for f in skipped]
+        lines.append(f"You can get {'it' if one else 'them'} from the UARB site: search {r.matter}, open the "
+                     f"{r.doc_type} tab, and click GO GET IT.")
     failed = [d for d in r.documents if not d.files]
     if failed:
         lines.append(f"(I couldn't download: {', '.join(f'{d.doc_no} {d.title}' for d in failed)}.)")
@@ -139,6 +146,11 @@ def compose_part(result: MatterResult, parts: list[ZipPart], i: int) -> str:
         f"Part {i + 1} of {len(parts)} of the {result.doc_type} for {result.matter}.", "",
         f"Attached ({p.path.name}):", *[f"  • {f.name}" for f in p.files], "", "UARB Document Agent",
     ])
+
+
+def compose_ack(message: str) -> str:
+    # A quick "on it" note reads naturally without a greeting; the full reply that follows has one.
+    return f"{message}\n\nUARB Document Agent"
 
 
 def compose_error(message: str, greeting_name: str = "") -> str:
