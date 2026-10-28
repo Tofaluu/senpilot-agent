@@ -64,7 +64,9 @@ Matter numbers are the letter M followed by exactly 5 digits (e.g. M12205). Norm
 ("m 12205" -> "M12205"). If a number has the wrong number of digits, don't guess; ask in `clarification`.
 
 Document types are exactly: {", ".join(DOC_TYPES)}. Map natural phrasing to them ("key docs" -> Key Documents, \
-"hearing transcripts" -> Transcripts, "audio" -> Recordings, "other files" -> Other Documents). If the sender \
+"hearing transcripts" -> Transcripts, "other files" -> Other Documents). "recording(s)", "audio" and \
+"hearing audio" mean Recordings. "record" or "records" is ambiguous (it can mean any document), so ask which \
+type in `clarification` rather than assuming Recordings. If the sender \
 asks for "everything" or "all documents" for a matter, return one request per document type. If no type is given \
 at all, ask which one in `clarification`.
 
@@ -104,8 +106,9 @@ replaced_lock = threading.Lock()
 # thread_id -> name the sender signed with, so an unsigned follow-up keeps the same greeting.
 thread_names: dict[str, str] = {}
 
-# Backstop against loops with bots that slip past the header checks: at most one help reply per sender per window.
-HELP_COOLDOWN_SECONDS = 24 * 3600
+# Backstop against loops with bots that slip past the header checks: a loop is a rapid back-and-forth,
+# so a short per-sender cooldown is enough without silencing a person who asks again later.
+HELP_COOLDOWN_SECONDS = 10 * 60
 last_help: dict[str, float] = {}
 help_lock = threading.Lock()
 

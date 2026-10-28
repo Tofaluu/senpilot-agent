@@ -82,8 +82,17 @@ def _search(page: Page, matter: str) -> None:
     _click(page, page.get_by_text("eg M01234").bounding_box())
     # The placeholder is swapped for a contenteditable on focus; typing earlier is silently lost.
     page.wait_for_function("document.activeElement && document.activeElement.isContentEditable", timeout=10000)
-    page.keyboard.type(matter)
-    page.wait_for_timeout(500)
+    # On a slow CPU FileMaker can drop keystrokes, and a truncated number searches as "No Records Found".
+    for _ in range(3):
+        page.keyboard.press("Control+A")
+        page.keyboard.type(matter, delay=30)
+        page.wait_for_timeout(500)
+        typed = page.evaluate("document.activeElement ? document.activeElement.innerText.trim() : ''")
+        if typed == matter:
+            break
+        log.warning("typed %r but field shows %r; retyping", matter, typed)
+    else:
+        raise RuntimeError(f"could not enter {matter} into the search box")
 
     box_y = page.get_by_text("Go Directly to Matter").bounding_box()["y"]
     btn = min((b for b in page.get_by_text("Search", exact=True).all() if b.bounding_box()["y"] > box_y),
@@ -227,7 +236,11 @@ def fetch_matter(matter: str, doc_type: str, out_dir: Path, limit: int = 10, hea
                     mark("header parsed")
                     break
                 except MatterNotFound:
-                    raise
+                    # Only report "not found" if a fresh session agrees; a false negative tells the user a real matter doesn't exist.
+                    ctx.close()
+                    if attempt >= 1:
+                        raise
+                    log.warning("%s not found on attempt %d; confirming with a fresh session", matter, attempt + 1)
                 except Exception as e:
                     ctx.close()
                     if attempt == 2:
