@@ -30,6 +30,8 @@ Design notes:
 - **The scraper verifies what it scraped.** It checks the page shows the requested matter before trusting it (an early bug silently opened M00001).
 - **Stateless dedup.** An email counts as handled if the agent has replied to it (`in_reply_to`), so restarts and redeploys never double-answer.
 - **Large filings** are split across several ZIPs in the same thread rather than failing.
+- **Corrections** ("sorry, I meant Key Documents") cancel the in-flight job for that thread, by email timestamp.
+- **No mail loops.** Automated/bulk mail is detected from standard headers (RFC 3834 `Auto-Submitted`, `Precedence`, `List-*`, `noreply@`) before the model runs, outgoing mail is marked `Auto-Submitted: auto-replied`, and help replies are rate-limited per sender.
 
 ## Run locally
 

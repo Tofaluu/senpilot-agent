@@ -13,6 +13,10 @@ INBOX = os.environ.get("AGENTMAIL_INBOX", "")
 client = AgentMail(api_key=os.environ.get("AGENTMAIL_API_KEY", ""))
 
 
+# RFC 3834: marks our mail as automated so well-behaved auto-responders (out-of-office etc.) don't reply to it.
+AUTO_HEADERS = {"Auto-Submitted": "auto-replied"}
+
+
 def _attachments(path: Path | None) -> list[dict] | None:
     if not path:
         return None
@@ -24,13 +28,15 @@ def _attachments(path: Path | None) -> list[dict] | None:
 
 
 def send(to: str, subject: str, text: str, attachment: Path | None = None):
-    return client.inboxes.messages.send(INBOX, to=to, subject=subject, text=text, attachments=_attachments(attachment))
+    return client.inboxes.messages.send(INBOX, to=to, subject=subject, text=text, attachments=_attachments(attachment),
+                                        headers=AUTO_HEADERS)
 
 
 def reply(message_id: str, text: str, attachment: Path | None = None, to: str | None = None):
     # Replying to our own sent message would default back to us, so callers can pin the recipient.
     extra = {"to": to} if to else {}
-    return client.inboxes.messages.reply(INBOX, message_id, text=text, attachments=_attachments(attachment), **extra)
+    return client.inboxes.messages.reply(INBOX, message_id, text=text, attachments=_attachments(attachment),
+                                         headers=AUTO_HEADERS, **extra)
 
 
 if __name__ == "__main__":

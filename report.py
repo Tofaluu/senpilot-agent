@@ -148,6 +148,20 @@ def compose_part(result: MatterResult, parts: list[ZipPart], i: int) -> str:
     ])
 
 
+def compose_help(greeting_name: str = "") -> str:
+    return "\n".join([
+        f"Hi {greeting_name or 'there'},", "",
+        "I'm an email agent for the Nova Scotia Utility and Review Board (UARB) public documents database. Send me "
+        "a matter number and a document type, and I'll reply with a summary of the matter, a count of all its "
+        "documents, and up to 10 of the documents you asked for as a ZIP.", "",
+        "For example:",
+        '  "Can you send me the Other Documents for M12205?"', "",
+        "Matter numbers are the letter M followed by 5 digits. Document types are: " + _join(DOC_TYPES) + ". "
+        "If you change your mind, just reply in the same thread (e.g. \"sorry, I meant Key Documents\") and I'll switch.",
+        "", "Best,", "UARB Document Agent",
+    ])
+
+
 def compose_ack(message: str) -> str:
     # A quick "on it" note reads naturally without a greeting; the full reply that follows has one.
     return f"{message}\n\nUARB Document Agent"
