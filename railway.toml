@@ -1,0 +1,6 @@
+[build]
+builder = "DOCKERFILE"
+
+[deploy]
+# A long-running worker: no port, no healthcheck, and it should come back on any exit.
+restartPolicyType = "ALWAYS"

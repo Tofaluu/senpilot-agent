@@ -1,0 +1,7 @@
+.venv/
+.env
+downloads*/
+recon_out/
+*.zip
+__pycache__/
+.git/
