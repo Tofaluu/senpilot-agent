@@ -43,6 +43,12 @@ uv run python scraper.py M12205 "Key Documents" --show   # just the scraper, wit
 
 ## Deploy
 
-The `Dockerfile` builds on the official Playwright image; `railway.toml` runs it as an always-restarting worker. Set `AGENTMAIL_API_KEY`, `AGENTMAIL_INBOX` and `ANTHROPIC_API_KEY` as environment variables on the host.
+Runs on [Fly.io](https://fly.io) as a worker (no public port). The `Dockerfile` builds on the official Playwright image; `fly.toml` gives it 1 GB for 3 concurrent Chromium workers (`WORKERS` env var).
+
+```bash
+fly launch --copy-config --no-deploy
+fly secrets set AGENTMAIL_API_KEY=... AGENTMAIL_INBOX=... ANTHROPIC_API_KEY=...
+fly deploy
+```
 
 `recon*.py` are the exploration scripts used to reverse-engineer the site before writing the scraper.

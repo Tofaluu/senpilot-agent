@@ -1,0 +1,16 @@
+app = "uarb-agent-tofalu"
+# Toronto: closest Fly region to the UARB servers in Nova Scotia.
+primary_region = "yyz"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  WORKERS = "3"
+
+# No [http_service]: this is a polling worker with no inbound traffic, so Fly never auto-stops it.
+# Each worker runs its own Chromium (~250MB), so 1GB fits 3 workers.
+[[vm]]
+  memory = "1gb"
+  cpu_kind = "shared"
+  cpus = 1

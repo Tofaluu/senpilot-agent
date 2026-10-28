@@ -1,6 +1,7 @@
 """Polls the AgentMail inbox, understands each request with Claude, and replies with the documents."""
 
 import logging
+import os
 import shutil
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -19,7 +20,7 @@ log = logging.getLogger("agent")
 
 POLL_SECONDS = 10
 # Each worker runs its own headless Chromium (~200MB), so keep this small on a hobby-tier container.
-WORKERS = 3
+WORKERS = int(os.environ.get("WORKERS", "3"))
 WORK_DIR = Path("downloads")
 MODEL = "claude-opus-5-5"
 
